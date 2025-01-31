@@ -241,5 +241,250 @@
             <!-- 選項卡片將由 JavaScript 動態生成 -->
         </div>
     </div>
+    <script>
+        // 遊戲數據
+        const gameState = {
+            lives: 3,
+            timeLeft: 30,
+            score: 0,
+            castleParts: 0,
+            magicItems: {
+                mask: 3,    // 🎭
+                star: 2,    // ⭐
+                sparkle: 1  // ✨
+            },
+            timer: null,
+            currentQuestion: null,
+            questions: [
+                {
+                    question: "哪位公主有一位名叫帕斯卡的變色龍朋友？",
+                    options: ["樂佩", "小美人魚", "花木蘭", "貝兒"],
+                    correct: 0
+                },
+                {
+                    question: "在《美女與野獸》中，誰被變成了茶壺？",
+                    options: ["魯米亞夫人", "華斯太太", "可古太太", "茉莉夫人"],
+                    correct: 1
+                },
+                {
+                    question: "《冰雪奇緣》中，誰說過「有些人值得為他融化」？",
+                    options: ["安娜", "艾莎", "雪寶", "克里斯托夫"],
+                    correct: 2
+                },
+                {
+                    question: "小木偶匹諾曹的鼻子會因為什麼而變長？",
+                    options: ["開心", "說謊", "害怕", "生氣"],
+                    correct: 1
+                },
+                {
+                    question: "在《阿拉丁》中，精靈能實現幾個願望？",
+                    options: ["一個", "兩個", "三個", "無限個"],
+                    correct: 2
+                }
+            ]
+        };
+
+        // 更新城堡進度顯示
+        function updateCastleProgress() {
+            const castleParts = document.querySelectorAll('.castle-part');
+            castleParts.forEach((part, index) => {
+                if (index < gameState.castleParts) {
+                    part.classList.add('active');
+                } else {
+                    part.classList.remove('active');
+                }
+            });
+        }
+
+        // 更新生命值顯示
+        function updateLives() {
+            const hearts = document.querySelectorAll('.heart');
+            hearts.forEach((heart, index) => {
+                heart.style.opacity = index < gameState.lives ? '1' : '0.3';
+            });
+        }
+
+        // 更新魔法道具數量
+        function updateMagicItems() {
+            const items = document.querySelectorAll('.magic-item');
+            const magicTypes = ['mask', 'star', 'sparkle'];
+            
+            items.forEach((item, index) => {
+                const type = magicTypes[index];
+                const count = gameState.magicItems[type];
+                
+                // 移除現有的計數元素
+                const existingCount = item.querySelector('.magic-count');
+                if (existingCount) {
+                    existingCount.remove();
+                }
+                
+                // 添加新的計數元素
+                if (count > 0) {
+                    const countElement = document.createElement('div');
+                    countElement.className = 'magic-count';
+                    countElement.textContent = count;
+                    item.appendChild(countElement);
+                    item.classList.remove('used');
+                } else {
+                    item.classList.add('used');
+                }
+            });
+        }
+
+        // 更新計時器顯示
+        function updateTimer() {
+            const timerElement = document.querySelector('.timer');
+            timerElement.textContent = Math.max(0, gameState.timeLeft);
+        }
+
+        // 生成問題選項
+        function generateOptions(question) {
+            const optionsContainer = document.querySelector('.options-container');
+            optionsContainer.innerHTML = '';
+
+            question.options.forEach((option, index) => {
+                const optionCard = document.createElement('div');
+                optionCard.className = 'option-card';
+                optionCard.textContent = option;
+                optionCard.onclick = () => checkAnswer(index);
+                optionsContainer.appendChild(optionCard);
+            });
+        }
+
+        // 檢查答案
+        function checkAnswer(selectedIndex) {
+            if (gameState.currentQuestion.correct === selectedIndex) {
+                // 答對
+                gameState.score += 100;
+                gameState.castleParts++;
+                updateCastleProgress();
+                
+                if (gameState.castleParts >= 5) {
+                    endGame(true);
+                    return;
+                }
+            } else {
+                // 答錯
+                gameState.lives--;
+                updateLives();
+                
+                if (gameState.lives <= 0) {
+                    endGame(false);
+                    return;
+                }
+            }
+
+            // 下一個問題
+            startNewQuestion();
+        }
+
+        // 開始新問題
+        function startNewQuestion() {
+            const randomIndex = Math.floor(Math.random() * gameState.questions.length);
+            gameState.currentQuestion = gameState.questions[randomIndex];
+            generateOptions(gameState.currentQuestion);
+            
+            // 重置計時器
+            gameState.timeLeft = 30;
+            updateTimer();
+        }
+
+        // 遊戲結束
+        function endGame(isWin) {
+            clearInterval(gameState.timer);
+            const message = isWin ? 
+                `恭喜你完成了迪士尼魔法城堡！得分：${gameState.score}` : 
+                `遊戲結束！得分：${gameState.score}`;
+            
+            setTimeout(() => {
+                alert(message);
+                // 這裡可以添加重新開始遊戲的邏輯
+            }, 500);
+        }
+
+        // 開始遊戲
+        function startGame() {
+            // 初始化遊戲狀態
+            gameState.lives = 3;
+            gameState.timeLeft = 30;
+            gameState.score = 0;
+            gameState.castleParts = 0;
+            
+            // 更新顯示
+            updateLives();
+            updateCastleProgress();
+            updateMagicItems();
+            
+            // 開始第一個問題
+            startNewQuestion();
+            
+            // 設置計時器
+            gameState.timer = setInterval(() => {
+                gameState.timeLeft--;
+                updateTimer();
+                
+                if (gameState.timeLeft <= 0) {
+                    gameState.lives--;
+                    updateLives();
+                    
+                    if (gameState.lives <= 0) {
+                        endGame(false);
+                        return;
+                    }
+                    
+                    startNewQuestion();
+                }
+            }, 1000);
+        }
+
+        // 初始化魔法道具點擊事件
+        function initializeMagicItems() {
+            const items = document.querySelectorAll('.magic-item');
+            items.forEach((item, index) => {
+                item.onclick = () => {
+                    const types = ['mask', 'star', 'sparkle'];
+                    const type = types[index];
+                    
+                    if (gameState.magicItems[type] > 0) {
+                        gameState.magicItems[type]--;
+                        updateMagicItems();
+                        
+                        // 使用魔法道具的效果
+                        switch(type) {
+                            case 'mask':
+                                gameState.timeLeft += 10;
+                                updateTimer();
+                                break;
+                            case 'star':
+                                // 移除兩個錯誤選項
+                                const options = document.querySelectorAll('.option-card');
+                                let removed = 0;
+                                for (let i = 0; i < options.length && removed < 2; i++) {
+                                    if (i !== gameState.currentQuestion.correct) {
+                                        options[i].style.opacity = '0.3';
+                                        options[i].onclick = null;
+                                        removed++;
+                                    }
+                                }
+                                break;
+                            case 'sparkle':
+                                // 提示正確答案
+                                const correctOption = document.querySelectorAll('.option-card')[gameState.currentQuestion.correct];
+                                correctOption.classList.add('hint');
+                                setTimeout(() => correctOption.classList.remove('hint'), 3000);
+                                break;
+                        }
+                    }
+                };
+            });
+        }
+
+        // 當頁面加載完成時開始遊戲
+        window.onload = () => {
+            initializeMagicItems();
+            startGame();
+        };
+    </script>
 </body>
 </html>
